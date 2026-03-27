@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Pyxel Studio</title>
+    <title>Pyxel Studio pour Capytale</title>
 
     <!-- Favicon -->
     <link rel="shortcut icon" href="assets/img/favicon.png">
@@ -12,7 +12,7 @@
     <!-- Font Awesome -->
     <link href="assets/fontawesome/css/all.css" rel="stylesheet">
 
-    <!-- Styles -->
+    <!-- Feuilles de style -->
     <link href="assets/css/bootstrap.css" rel="stylesheet">
     <link href="assets/css/custom.css" rel="stylesheet">
     <link href="assets/wasm/pyxel.css" rel="stylesheet">
@@ -43,7 +43,7 @@
             grid-column: 2;
         }
 
-        /* Fix for tab content and scrolling */
+        /* Correction pour le contenu des onglets et le défilement */
         .tab-content {
             flex-grow: 1;
             min-height: 0;
@@ -62,7 +62,7 @@
             flex-direction: column;
         }
 
-        /* No scroll for editors themselves, they have internal scroll or fill the space */
+        /* Pas de scroll pour les éditeurs, ils ont leur propre scroll interne */
         #pills-code_editor,
         #pills-resources_editor {
             overflow: hidden;
@@ -87,21 +87,21 @@
 
             <div class="row mt-1">
                 <div class="col">
-                    <!-- TABS -->
+                    <!-- ONGLETS -->
                     <ul id="pills-tab" class="nav nav-pills mb-3" role="tablist">
                         <img src="assets/img/pyxelstudio-logo.png" class="me-3" width="50" height="33"
                             alt="Pyxel Studio" />
+                        <li class="nav-item me-3 mb-1" role="presentation">
+                            <button id="pills-documentation-tab" class="btn btn-light btn-sm" style="width:40px"
+                                data-bs-toggle="pill" data-bs-target="#pills-documentation" type="button" role="tab"
+                                aria-controls="pills-documentation" aria-selected="false"><i
+                                    class="fa-solid fa-book"></i></button>
+                        </li>
                         <li class="nav-item me-1 mb-1" role="presentation">
                             <button id="pills-files-tab" class="btn btn-primary btn-sm" style="width:40px"
                                 data-bs-toggle="pill" data-bs-target="#pills-files" type="button" role="tab"
                                 aria-controls="pills-files" aria-selected="false"><i
                                     class="fa-solid fa-list-ul"></i></button>
-                        </li>
-                        <li class="nav-item me-1 mb-1" role="presentation">
-                            <button id="pills-documentation-tab" class="btn btn-primary btn-sm" style="width:40px"
-                                data-bs-toggle="pill" data-bs-target="#pills-documentation" type="button" role="tab"
-                                aria-controls="pills-documentation" aria-selected="false"><i
-                                    class="fa-solid fa-book"></i></button>
                         </li>
                         <li class="nav-item me-1 mb-1" role="presentation">
                             <button id="pills-code_editor-tab" class="btn btn-primary btn-sm active" style="width:40px"
@@ -120,36 +120,35 @@
                                     class="fas fa-play"></i></button>
                         </li>
                     </ul>
-                    <!-- /TABS -->
+                    <!-- /ONGLETS -->
 
                 </div>
             </div>
 
             <div class="tab-content flex-grow-1" id="pills-tabContent">
 
-                <!-- TAB - FILES -->
+                <!-- ONGLET - FICHIERS -->
                 <div id="pills-files" class="tab-pane fade" role="tabpanel" aria-labelledby="pills-files-tab"
                     tabindex="0">
                     <div class="mt-2 mb-3">
                         <span class="ms-1"><button class="btn btn-sm btn-light" onclick="addFilePrompt()"
-                                data-bs-toggle="tooltip" data-bs-title="add a file"><i
-                                    class="fa-solid fa-square-plus fa-xl"></i></button></span>
+                                data-bs-toggle="tooltip" data-bs-title="add a file"><i class="fa-solid fa-plus"></i></button></span>
                         <span class="ms-2">
                             <label for="upload_files" class="btn btn-sm btn-light m-0" data-bs-toggle="tooltip"
                                 data-bs-title="upload files" style="cursor:pointer">
-                                <i class="fa-solid fa-arrow-up-from-bracket fa-xl"></i>
+                                <i class="fa-solid fa-arrow-up-from-bracket"></i>
                             </label>
                             <input type="file" id="upload_files" accept=".py,.txt,.pyxres,.pyxapp" multiple
                                 style="display:none;" onchange="handleFileUpload(event)">
                         </span>
                     </div>
                     <ul id="files_list" class="list-group font-monospace small mb-5">
-                        <!-- Dynamically populated -->
+                        <!-- Rempli dynamiquement -->
                     </ul>
                 </div>
-                <!-- /TAB - FILES -->
+                <!-- /ONGLET - FICHIERS -->
 
-                <!-- TAB - DOCUMENTATION -->
+                <!-- ONGLET - DOCUMENTATION -->
                 <div id="pills-documentation" class="tab-pane fade" role="tabpanel"
                     aria-labelledby="pills-documentation-tab" tabindex="0">
                     <div class="mt-2 mb-5">
@@ -174,9 +173,9 @@
                         </div>
                     </div>
                 </div>
-                <!-- /TAB - DOCUMENTATION -->
+                <!-- /ONGLET - DOCUMENTATION -->
 
-                <!-- TAB - CODE EDITOR -->
+                <!-- ONGLET - ÉDITEUR DE CODE -->
                 <div class="tab-pane fade active show" id="pills-code_editor" role="tabpanel"
                     aria-labelledby="pills-code_editor-tab" tabindex="0">
                     <div class="mb-1 ps-1 font-monospace"><i class="fa-solid fa-file-code me-1"></i><b
@@ -187,25 +186,25 @@
                         </div>
                     </div>
                 </div>
-                <!-- /TAB - CODE EDITOR -->
+                <!-- /ONGLET - ÉDITEUR DE CODE -->
 
-                <!-- TAB - RESOURCES EDITOR -->
+                <!-- ONGLET - ÉDITEUR DE RESSOURCES -->
                 <div id="pills-resources_editor" class="tab-pane fade" role="tabpanel"
                     aria-labelledby="pills-resources_editor-tab" tabindex="0">
                     <div class="mb-1 ps-1 font-monospace"><i class="fa-solid fa-palette me-1"></i><b
                             id="active_pyxres_display">res.pyxres</b></div>
                     <div id="pyxel-editor" style="flex-grow:1;min-height:0;"></div>
                 </div>
-                <!-- /TAB - RESOURCES EDITOR -->
+                <!-- /ONGLET - ÉDITEUR DE RESSOURCES -->
 
             </div>
 
         </div>
 
-        <!-- gutter -->
+        <!-- séparateur -->
         <div class="gutter-col gutter-col-1"></div>
 
-        <!-- RIGHT SIDE -->
+        <!-- PANNEAU DROIT -->
         <div style="overflow-y:hidden;padding:0px;margin:0px;height:100%;background-color:#111;">
             <div id="pyxel-screen" class="text-center"
                 style="height:100%;position:relative;padding:0px;margin:0px;color:white;">
@@ -219,30 +218,30 @@
 
     <script src="assets/js/bootstrap.bundle.min.js"></script>
 
-    <!-- Capytale app-agent loaded dynamically via import() in initRPC -->
+    <!-- Capytale app-agent chargé dynamiquement via import() dans initRPC -->
     <script src="assets/js/ace/ace.js" type="text/javascript" charset="utf-8"></script>
     <script src="https://cdn.jsdelivr.net/pyodide/v0.23.1/full/pyodide.js" type="text/javascript"
         charset="utf-8"></script>
 
     <script>
-        // Global references
+        // Références globales
         var code_editor;
         var active_py = "app.py";
         var active_pyxres = "res.pyxres";
-        var _capytaleContentChanged = null; // set by initRPC once socket is connected
+        var _capytaleContentChanged = null; // défini par initRPC une fois le socket connecté
 
         function notifyCapytaleChange() {
             if (_capytaleContentChanged) _capytaleContentChanged();
         }
 
         function initApp() {
-            // --- Tooltips & Popovers ---
+            // --- Tooltips et Popovers ---
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
             const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
             const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
             const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
 
-            // --- Ace Editor ---
+            // --- Éditeur Ace ---
             code_editor = ace.edit("code_editor", {
                 theme: "ace/theme/puzzle_code",
                 mode: "ace/mode/python",
@@ -269,7 +268,7 @@
                 notifyCapytaleChange();
             });
 
-            // --- Initial Load from LocalStorage ---
+            // --- Chargement initial depuis le localStorage ---
             const savedData = localStorage.getItem('capytale_pyxel_studio_data');
             if (savedData) {
                 const json = JSON.parse(savedData);
@@ -277,10 +276,10 @@
             }
             document.getElementById('active_py_display').innerText = active_py;
 
-            // --- Capytale RPC ---
+            // --- RPC Capytale ---
             initRPC();
 
-            // --- Initial UI Render ---
+            // --- Rendu initial de l'interface ---
             renderFilesList();
         }
     </script>
@@ -288,9 +287,9 @@
 
 
     <script>
-        // =======================
+        // ==================================================================
         // INITIALISATION & RPC (Capytale app-agent / simple-content(json):1)
-        // =======================
+        // ==================================================================
         async function initRPC() {
             var pyxel_py = "import pyxel\n\n";
             var pyxel_pyxres = "UEsDBBQAAAAAAAAAIQAAAAAAAAAAAAAAAAAPAAAAcHl4ZWxfcmVzb3VyY2UvUEsDBBQAAAAIAAAAIQAkqgK2CAAAAAYAAAAWAAAAcHl4ZWxfcmVzb3VyY2UvdmVyc2lvbjPUs9QzNAMAUEsBAi4DFAAAAAAAAAAhAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAO1BAAAAAHB5eGVsX3Jlc291cmNlL1BLAQIuAxQAAAAIAAAAIQAkqgK2CAAAAAYAAAAWAAAAAAAAAAAAAACkgS0AAABweXhlbF9yZXNvdXJjZS92ZXJzaW9uUEsFBgAAAAACAAIAgQAAAGkAAAAAAA==";
@@ -300,9 +299,9 @@
                 localStorage.setItem('capytale_pyxel_studio_data', JSON.stringify(defaultData));
             }
 
-            // Skip RPC when running standalone (not in an iframe)
+            // Ignorer le RPC en mode autonome (pas dans une iframe)
             if (window.parent === window) {
-                console.log("Pyxel Studio: running standalone (no Capytale iframe detected).");
+                console.log("Pyxel Studio : mode autonome (aucune iframe Capytale détectée).");
                 return;
             }
 
@@ -310,7 +309,7 @@
                 const { getSocket } = await import("https://cdn.jsdelivr.net/npm/@capytale/app-agent/+esm");
                 const socket = getSocket();
 
-                // Implement the simple-content(json) contract
+                // Implémentation du contrat simple-content(json)
                 socket.plug('simple-content(json):1', () => ({
                     loadContent(content) {
                         if (!content || Object.keys(content).length === 0) {
@@ -331,24 +330,24 @@
                         return json;
                     },
                     contentSaved() {
-                        console.log("Pyxel Studio: content saved by Capytale.");
+                        console.log("Pyxel Studio : contenu sauvegardé par Capytale.");
                     }
                 }));
 
-                // Access the MetaPlayer side to call contentChanged()
+                // Accès au côté MetaPlayer pour appeler contentChanged()
                 socket.use('simple-content(json)', (sc) => {
                     _capytaleContentChanged = () => sc.i.contentChanged();
 
-                    // Notify on cross-tab localStorage changes
+                    // Notifier lors de changements localStorage inter-onglets
                     window.addEventListener('storage', function () {
                         sc.i.contentChanged();
                     });
                 });
 
                 socket.plugsDone();
-                console.log("Pyxel Studio: Capytale RPC initialized (simple-content(json):1).");
+                console.log("Pyxel Studio : RPC Capytale initialisé (simple-content(json):1).");
             } catch (e) {
-                console.error("Pyxel Studio: failed to initialize Capytale RPC.", e);
+                console.error("Pyxel Studio : échec de l'initialisation du RPC Capytale.", e);
             }
         }
     </script>
@@ -367,12 +366,12 @@
                 const resourceIframe = document.querySelector('#pyxel-editor iframe');
                 if (!resourceIframe) return;
 
-                // Safe check for cross-origin access
+                // Vérification sécurisée de l'accès cross-origin
                 let context;
                 try {
                     context = resourceIframe.contentWindow.pyxelContext;
                 } catch (e) {
-                    // Cross-origin access blocked
+                    // Accès cross-origin bloqué
                     return;
                 }
 
@@ -380,16 +379,16 @@
                     return;
                 }
 
-                // --- TRIGGER THE SAVE (F13) ---
-                // F13 forces Pyxel to flush its RAM to the VFS.
-                // Our hooks in the iframe will catch the resulting save call and make it silent.
+                // --- DÉCLENCHEMENT DE LA SAUVEGARDE (F13) ---
+                // F13 force Pyxel à écrire sa RAM dans le VFS.
+                // Nos hooks dans l'iframe interceptent l'appel de sauvegarde et le rendent silencieux.
                 const doc = resourceIframe.contentWindow.document;
                 doc.dispatchEvent(new KeyboardEvent("keydown", { key: "F13", code: "F13", bubbles: true }));
                 doc.dispatchEvent(new KeyboardEvent("keyup", { key: "F13", code: "F13", bubbles: true }));
 
-                // --- SILENT VFS SYNC ---
-                // After F13, we read the new state from the virtual file system.
-                await new Promise(resolve => setTimeout(resolve, 150)); // Slightly longer wait for flush
+                // --- SYNCHRONISATION SILENCIEUSE DU VFS ---
+                // Après F13, on lit le nouvel état depuis le système de fichiers virtuel.
+                await new Promise(resolve => setTimeout(resolve, 150)); // Attente pour le flush
 
                 const resData = uint8ToBase64(context.pyodide.FS.readFile(`/pyxel_working_directory/${active_pyxres}`));
                 const json = JSON.parse(localStorage.getItem('capytale_pyxel_studio_data') || '{}');
@@ -432,14 +431,14 @@
             forceSavePyxelResource().catch(e => console.warn("Background save failed:", e));
         });
 
-        // =======================
-        // FILE MANAGEMENT
-        // =======================
+        // ====================
+        // GESTION DES FICHIERS
+        // ====================
         function renderFilesList() {
             const listContainer = document.getElementById('files_list');
             if (!listContainer) return;
 
-            // Dispose existing tooltips to prevent ghost tooltips
+            // Supprimer les tooltips existants pour éviter les tooltips fantômes
             const oldTooltips = listContainer.querySelectorAll('[data-bs-toggle="tooltip"]');
             oldTooltips.forEach(el => {
                 const tooltip = bootstrap.Tooltip.getInstance(el);
@@ -483,7 +482,7 @@
                 listContainer.appendChild(li);
             });
 
-            // re-initialize tooltips
+            // Réinitialiser les tooltips
             const tooltipTriggerList = document.querySelectorAll('#files_list [data-bs-toggle="tooltip"]');
             [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl));
         }
@@ -500,7 +499,7 @@
             document.getElementById('active_py_display').innerText = active_py;
             renderFilesList();
 
-            // Switch to code tab
+            // Basculer vers l'onglet code
             var tab = bootstrap.Tab.getOrCreateInstance(document.querySelector('#pills-code_editor-tab'));
             tab.show();
         }
@@ -516,11 +515,11 @@
                 document.getElementById('active_pyxres_display').innerText = active_pyxres;
                 renderFilesList();
 
-                // Re-inject iframe only if needed to load a different or new file
+                // Réinjecter l'iframe seulement si nécessaire pour charger un fichier différent
                 container.innerHTML = `<iframe src='${iframeSrc}' width='100%' frameborder='0' scrolling='no' style='height:100%'></iframe>`;
             }
 
-            // Switch to resources tab
+            // Basculer vers l'onglet ressources
             var tab = bootstrap.Tab.getOrCreateInstance(document.querySelector('#pills-resources_editor-tab'));
             tab.show();
         }
@@ -553,7 +552,7 @@
             } else if (ext === 'txt') {
                 json[filename] = "";
             } else if (ext === 'pyxres') {
-                // A minimal valid Pyxel resource file in base64
+                // Fichier ressource Pyxel minimal valide en base64
                 json[filename] = "UEsDBBQAAAAAAAAAIQAAAAAAAAAAAAAAAAAPAAAAcHl4ZWxfcmVzb3VyY2UvUEsDBBQAAAAIAAAAIQAkqgK2CAAAAAYAAAAWAAAAcHl4ZWxfcmVzb3VyY2UvdmVyc2lvbjPUs9QzNAMAUEsBAi4DFAAAAAAAAAAhAAAAAAAAAAAAAAAAAA8AAAAAAAAAAAAAAO1BAAAAAHB5eGVsX3Jlc291cmNlL1BLAQIuAxQAAAAIAAAAIQAkqgK2CAAAAAYAAAAWAAAAAAAAAAAAAACkgS0AAABweXhlbF9yZXNvdXJjZS92ZXJzaW9uUEsFBgAAAAACAAIAgQAAAGkAAAAAAA==";
             }
 
@@ -586,12 +585,12 @@
                 return;
             }
 
-            // Rename logic
+            // Logique de renommage
             json[newFilename] = json[oldFilename];
             delete json[oldFilename];
             localStorage.setItem('capytale_pyxel_studio_data', JSON.stringify(json));
 
-            // Update active trackers if needed
+            // Mettre à jour les fichiers actifs si nécessaire
             if (active_py === oldFilename) {
                 active_py = newFilename;
                 document.getElementById('active_py_display').innerText = active_py;
@@ -623,14 +622,14 @@
 
             let ext = filename.split('.').pop();
             if (ext === 'pyxres' || ext === 'pyxapp') {
-                // Convert base64 to blob
+                // Convertir le base64 en blob
                 const binary = atob(content);
                 const array = new Uint8Array(binary.length);
                 for (let i = 0; i < binary.length; i++) array[i] = binary.charCodeAt(i);
                 const blob = new Blob([array], { type: "application/octet-stream" });
                 url = URL.createObjectURL(blob);
             } else {
-                // Text file
+                // Fichier texte
                 const blob = new Blob([content], { type: "text/plain" });
                 url = URL.createObjectURL(blob);
             }
@@ -664,10 +663,10 @@
                     const reader = new FileReader();
                     reader.onload = function (e) {
                         if (ext === 'pyxres' || ext === 'pyxapp') {
-                            // Extract base64 part
+                            // Extraire la partie base64
                             json[file.name] = e.target.result.split(',')[1];
                         } else {
-                            // Text
+                            // Texte
                             json[file.name] = e.target.result;
                         }
                         resolve();
@@ -685,7 +684,7 @@
                 localStorage.setItem('capytale_pyxel_studio_data', JSON.stringify(json));
                 renderFilesList();
                 notifyCapytaleChange();
-                event.target.value = ''; // reset input
+                event.target.value = ''; // réinitialiser l'input
             });
         }
 
