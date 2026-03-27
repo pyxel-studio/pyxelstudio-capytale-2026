@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="cache-control" content="max-age=0" />
+    <meta http-equiv="cache-control" content="no-store" />
+    <meta http-equiv="expires" content="-1" />
+    <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+    <meta http-equiv="pragma" content="no-cache" />    
+    <link href="assets/css/bootstrap.css" rel="stylesheet">
+    <link href="assets/fontawesome/css/all.css" rel="stylesheet">
+    <link href="assets/css/custom.css" rel="stylesheet">
+	<link href="assets/wasm/pyxel.css" rel="stylesheet">
+    <style>
+        html,body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        #mouse_activator:focus{
+            /* astuce pour activer la souris */
+            outline: none;
+        }
+    </style>
+    <title>Pyxel Resources Editor</title>
+</head>
+
+<body>
+
+    <div id="header" class="pe-1 pb-1 font-monospace">
+        <div class="row"> 
+		    <div class="col text-start">
+                <span id="mouse_activator" class="font-monospace fw-bold" tabindex="1">res.pyxres</span><span id="saved" class="ms-1 text-danger small" style="vertical-align:super;"></span>
+            </div>    
+            <div class="col text-end small text-dark text-center">
+                cliquer sur <img src="assets/img/save_button.png" /> ci-dessous pour enregistrer les modifications
+            </div>
+        </div>
+    </div> 
+
+	<div id="pyxel-screen" class="text-center" style="height:100%;"></div>	
+
+	<script src="https://cdn.jsdelivr.net/gh/kitao/pyxel/wasm/pyxel.js"></script>	
+	<pyxel-run
+      root="https://cdn.jsdelivr.net/gh/kitao/pyxel/wasm/"
+	  script="
+import js, json, base64, pyxel.cli
+pyxel_data = json.loads(js.localStorage.getItem('capytale_pyxel_studio_data'))
+for filename, content in pyxel_data.items():
+    if filename.endswith('.pyxres') or filename.endswith('.pyxapp'):
+        try:
+            with open(filename, 'wb') as f:
+                f.write(base64.b64decode(content))
+        except Exception as e:
+            print(f'Error decoding {filename}: {e}')
+    else:
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+url_params = js.URLSearchParams.new(js.window.location.search)
+edit_file = url_params.get('edit') or 'res.pyxres'
+pyxel.cli.edit_pyxel_resource(edit_file)
+	  "
+	></pyxel-run>
+    <script>
+        // --- AGGRESSIVE SILENT AUTO-SAVE HOOK ---
+        
+        // 1. Helper to convert Uint8Array to Base64
+        function uint8ToBase64(buffer) {
+            let binary = "";
+            let bytes = new Uint8Array(buffer);
+            let len = bytes.byteLength;
+            for (let i = 0; i < len; i++) {
+                binary += String.fromCharCode(bytes[i]);
+            }
+            return window.btoa(binary);
+        }
+
+        // 2. The Silent Save Logic
+        function silentSave(filename) {
+            if (!window.pyxelContext?.pyodide) return;
+            try {
+                const fs = window.pyxelContext.pyodide.FS;
+                const path = filename.startsWith('/') ? filename : `/pyxel_working_directory/${filename}`;
+                const content = fs.readFile(path);
+                const base64Content = uint8ToBase64(content);
+                const storageKey = 'capytale_pyxel_studio_data';
+                const storageData = JSON.parse(localStorage.getItem(storageKey) || '{}');
+                
+                const name = filename.split('/').pop();
+                storageData[name] = base64Content;
+                localStorage.setItem(storageKey, JSON.stringify(storageData));
+                
+                const indicator = document.getElementById('saved');
+                if (indicator) {
+                    indicator.innerText = "(Auto-enregistré)";
+                    indicator.className = "ms-1 text-success small";
+                    setTimeout(() => indicator.innerText = "", 2000);
+                }
+                console.log("Aggressive silent save complete for:", name);
+            } catch (e) {
+                console.error("Aggressive silent save failed:", e);
+            }
+        }
+
+        // 3. Prevent pyxel.js from overriding our hook
+        let _realHook = (filename) => silentSave(filename);
+        Object.defineProperty(window, '_savePyxelFile', {
+            get: () => _realHook,
+            set: (val) => { console.log("Blocking Pyxel attempt to set _savePyxelFile"); },
+            configurable: false
+        });
+
+        // 4. Block download attempts via <a> tags (Second line of defense)
+        const originalCreateElement = document.createElement;
+        document.createElement = function(tagName) {
+            const el = originalCreateElement.call(document, tagName);
+            if (tagName.toLowerCase() === 'a') {
+                const originalClick = el.click;
+                el.click = function() {
+                    if (this.download && (this.href.startsWith('blob:') || this.href.startsWith('data:'))) {
+                        console.log("Blocked download attempt for:", this.download);
+                        // Still perform the silent save just in case this was triggered by a save button
+                        silentSave(this.download);
+                        return; 
+                    }
+                    return originalClick.apply(this, arguments);
+                };
+            }
+            return el;
+        };
+
+        // Skip 'click to start' screen automatically
+        function skipClickToStart() {
+            if (window.pyxelContext?.resolveInput) {
+                window.pyxelContext.resolveInput();
+                setTimeout(() => window.pyxelContext.resolveInput?.(), 100);
+                setTimeout(() => window.pyxelContext.resolveInput?.(), 500);
+            } else {
+                setTimeout(skipClickToStart, 10);
+            }
+        }
+        skipClickToStart();
+    </script>
+
+    <script>
+        // astuce pour activer la souris
+        const urlParams = new URLSearchParams(window.location.search);
+        const editFile = urlParams.get('edit') || 'res.pyxres';
+        document.getElementById("mouse_activator").innerText = editFile;
+        document.getElementById("mouse_activator").focus();
+        
+		// redimensionnement de la fenêtre
+        var body_h = document.body.offsetHeight;
+        var header_h = document.getElementById('header').offsetHeight;
+        var content_h = body_h - header_h;
+        document.getElementById('pyxel-screen').setAttribute("style","overflow-y:hidden;height:"+content_h+"px");
+        window.addEventListener("resize", function() {
+            var body_h = document.body.offsetHeight;
+            var header_h = document.getElementById('header').offsetHeight;
+            var content_h = body_h - header_h;
+            document.getElementById('pyxel-screen').setAttribute("style","overflow-y:hidden;height:"+content_h+"px");
+        });
+    </script>
+
+</body>
+</html>

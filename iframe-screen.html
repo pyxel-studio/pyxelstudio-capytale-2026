@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="cache-Control" content="no-cache, no-store, must-revalidate" />
+    <meta http-equiv="cache-control" content="max-age=0" />
+    <meta http-equiv="cache-control" content="no-store" />
+    <meta http-equiv="expires" content="-1" />
+    <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT" />
+    <meta http-equiv="pragma" content="no-cache" />    
+    <link href="assets/css/bootstrap.css" rel="stylesheet">
+    <link href="assets/fontawesome/css/all.css" rel="stylesheet">
+    <link href="assets/css/custom.css" rel="stylesheet">
+	<link href="assets/wasm/pyxel.css" rel="stylesheet">
+	
+    <style>
+        html,body {
+            height: 100%;
+            margin: 0;
+            overflow: hidden;
+        }
+        .btn-secondary {
+            /* trick to activate the mouse */
+            --bs-btn-focus-shadow-rgb: 248,250,252;
+        }       
+        .btn-dark, .btn-dark:not(.disabled):hover, .btn-dark:not(.disabled):active, .btn-dark:focus {
+            border-color: #0f0f0f;
+        }
+        .btn-dark {
+            --bs-btn-color: #fff;
+            --bs-btn-bg: #1a1a1a;
+            --bs-btn-border-color: #555;
+            --bs-btn-hover-color: #fff;
+            --bs-btn-hover-bg: #6f6f6f;
+            --bs-btn-hover-border-color: #666666;
+            --bs-btn-focus-shadow-rgb: 111, 111, 111;
+            --bs-btn-active-color: #fff;
+            --bs-btn-active-bg: #1a1a1a;
+            --bs-btn-active-border-color: #666666;
+            --bs-btn-active-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.125);
+            --bs-btn-disabled-color: #fff;
+            --bs-btn-disabled-bg: #555;
+            --bs-btn-disabled-border-color: #555;
+        }
+        .btn-dark:hover, .btn-dark:active, .btn-dark:focus {
+            background-color: #1a1a1a;
+        }
+        .btn-light:focus {
+            outline: none !important;
+            box-shadow: none;
+        }
+        .split {
+            height:100%;
+        }
+        .gutter {
+            background-color: rgb(229, 231, 235);
+            background-repeat: no-repeat;
+            background-position: 50%;
+        }
+        .gutter.gutter-vertical {
+            background-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAB4AAAAFAQMAAABo7865AAAABlBMVEVHcEzMzMzyAv2sAAAAAXRSTlMAQObYZgAAABBJREFUeF5jOAMEEAIEEFwAn3kMwcB6I2AAAAAASUVORK5CYII=');
+            cursor: row-resize;
+			height:15px !important;
+        }
+        #canvas:focus {
+            outline: none;
+        }
+        #pyxel_screen {
+            background-color:#030303 !important;
+        }
+    </style>
+
+    <title>Pyxel Player</title>
+</head>
+
+<body>
+
+    <div class="split">
+
+        <div id="split-0" style="position:relative;">
+
+            <div style="position:absolute;right:0px;top:2px;z-index:10000;">
+                <button tabindex="1" type="button" class="btn btn-light btn-sm p-2 pt-1 pb-0 me-2 mt-2" onclick="fullscreen('pyxel-screen')" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="fullscreen mode"><i class="fa-solid fa-expand"></i></button>
+            </div>
+
+            <div id="pyxel-screen" class="text-center" style="height:100%;"></div>
+
+        </div>
+
+        <div id="split-1">
+
+            <!-- CONSOLE -->
+            <div style="position:relative;padding:0px;margin:0;height:100%;background-color:#1a1a1a;">
+                <div style="position:absolute;right:10px;top:12px;" class="text-end">
+                    <button id="pause" class="btn btn-dark btn-sm"><i class="fa-solid fa-pause"></i></button>
+                    <button id="play" class="btn btn-dark btn-sm"><i class="fa-solid fa-play"></i></button>
+                    <button id="clear" class="btn btn-dark btn-sm"><i class="fa-solid fa-rotate-right"></i></button>
+                </div>
+                <textarea id="console" class="font-monospace" style="font-size:75%;margin:0;padding:10px;color:white;background-color:#1a1a1a;width:100%;height:100%;padding-top:40px;"></textarea>
+            </div>
+            
+        </div>
+    </div>
+
+    <script>
+	// Redirige la console du navigateur vers un textarea
+    let isPaused = false;
+
+    // Pause, play, clear
+    document.getElementById('pause').addEventListener('click', () => {isPaused = true;});
+    document.getElementById('play').addEventListener('click', () => {isPaused = false;});
+    document.getElementById('clear').addEventListener('click', () => {document.getElementById('console').innerHTML = "";});
+
+	(function () {
+		var oldLog = console.log;
+		console.log = function (message) {
+			if (message !== 'Wake Lock active.' && message !== 'Wake Lock released.') {
+				if (message == 'Loading pyxel') message = 'Loading pyxel...';
+				if (message == 'Loaded pyxel') message = 'Pyxel loaded!';
+
+                if (isPaused) return;
+
+				var console_textarea = document.getElementById('console');
+				console_textarea.scrollTop = console_textarea.scrollHeight;
+				if (typeof message === 'object') {
+					console_textarea.innerHTML += (JSON && JSON.stringify ? JSON.stringify(message) : message) + "\n";
+				} else {
+					console_textarea.innerHTML += message + "\n";
+				}
+			}
+		}
+	})();
+    </script>
+
+
+
+    <script>
+	function fullscreen(id) {
+		var el = document.getElementById(id);
+		if (el.requestFullscreen) {
+			el.requestFullscreen();
+		} else if (el.webkitRequestFullscreen) { /* Safari */
+			el.webkitRequestFullscreen();
+		} else if (el.msRequestFullscreen) { /* IE11 */
+			el.msRequestFullscreen();
+		}
+	}
+	</script>   
+	
+	<script src="https://cdn.jsdelivr.net/gh/kitao/pyxel/wasm/pyxel.js"></script>	
+	<pyxel-run
+      root="https://cdn.jsdelivr.net/gh/kitao/pyxel/wasm/"
+	  script="
+import js, json, base64, pyxel.cli
+pyxel_data = json.loads(js.localStorage.getItem('capytale_pyxel_studio_data'))
+for filename, content in pyxel_data.items():
+    if filename.endswith('.pyxres') or filename.endswith('.pyxapp'):
+        try:
+            with open(filename, 'wb') as f:
+                f.write(base64.b64decode(content))
+        except Exception as e:
+            print(f'Error decoding {filename}: {e}')
+    else:
+        with open(filename, 'w', encoding='utf-8') as f:
+            f.write(content)
+
+url_params = js.URLSearchParams.new(js.window.location.search)
+run_file = url_params.get('run') or 'app.py'
+if run_file.endswith('.pyxapp'):
+    pyxel.cli.play_pyxel_app(run_file)
+else:
+    pyxel.cli.run_python_script(run_file)
+	  "
+	></pyxel-run>
+    <script>
+        // Skip 'click to start' screen automatically
+        function skipClickToStart() {
+            if (window.pyxelContext?.resolveInput) {
+                window.pyxelContext.resolveInput();
+                // Call it again a bit later to be sure (it might be ignored if called too early)
+                setTimeout(() => window.pyxelContext.resolveInput?.(), 100);
+                setTimeout(() => window.pyxelContext.resolveInput?.(), 500);
+            } else {
+                setTimeout(skipClickToStart, 10);
+            }
+        }
+        skipClickToStart();
+    </script>
+	
+    <script src="assets/js/split.min.js"></script>
+    <script>
+        Split(['#split-0', '#split-1'], {
+            sizes: [75, 25],
+            direction: 'vertical',
+            minSize: 100,
+            snapOffset: 0,
+            onDrag: function (sizes) {
+                const c = document.getElementById('canvas');
+                if (c) c.focus();
+                window.dispatchEvent(new Event('resize'));
+            },
+        })
+    </script>	
+
+ 	<script src="assets/js/bootstrap.bundle.min.js"></script>   
+	
+    <script>
+	    const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+		const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+		const popoverTriggerList = document.querySelectorAll('[data-bs-toggle="popover"]')
+		const popoverList = [...popoverTriggerList].map(popoverTriggerEl => new bootstrap.Popover(popoverTriggerEl))
+	</script>    
+
+</body>
+</html>
