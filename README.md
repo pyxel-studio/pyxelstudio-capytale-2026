@@ -114,7 +114,7 @@ Le [Capytale Playground](https://github.com/capytale/capytale-playground) permet
 
 | Paramètre | Valeur |
 |-----------|--------|
-| **IFrame URL** | URL où l'application est servie (ex: `https://capytale-pyxelstudio-v2/`) |
+| **IFrame URL** | `https://pyxel-studio.github.io/pyxelstudio-capytale-2026/` |
 | **Contrat de sauvegarde** | `simple-content(json)` |
 | **Permissions iframe** | `fullscreen` |
 
