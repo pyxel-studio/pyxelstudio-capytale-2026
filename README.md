@@ -1,50 +1,52 @@
-# Pyxel Studio v2
+# Pyxel Studio pour Capytale 2026
 
-IDE en ligne pour [Pyxel](https://github.com/kitao/pyxel), integre a la plateforme [Capytale](https://capytale.fr).
+IDE en ligne pour [Pyxel](https://github.com/kitao/pyxel), intégré à la plateforme [Capytale](https://capytale.fr).
 
-Pyxel Studio permet aux eleves et enseignants de creer des jeux et animations en Python avec la bibliotheque Pyxel, directement dans le navigateur.
+**Démo en ligne** : [https://pyxel-studio.github.io/pyxelstudio-capytale-2026/](https://pyxel-studio.github.io/pyxelstudio-capytale-2026/)
 
-## Fonctionnalites
+Pyxel Studio permet aux élèves et enseignants de créer des jeux et animations en Python avec la bibliothèque Pyxel, directement dans le navigateur.
 
-- **Editeur de code Python** (Ace Editor) avec coloration syntaxique
-- **Editeur de ressources Pyxel** (.pyxres) integre pour le pixel art, les tilemaps, les sons et la musique
-- **Execution dans le navigateur** via Pyodide (Python WebAssembly) et Pyxel WASM
+## Fonctionnalités
+
+- **Éditeur de code Python** (Ace Editor) avec coloration syntaxique
+- **Éditeur de ressources Pyxel** (.pyxres) intégré pour le pixel art, les tilemaps, les sons et la musique
+- **Exécution dans le navigateur** via Pyodide (Python WebAssembly) et Pyxel WASM
 - **Gestion multi-fichiers** : .py, .pyxres, .pyxapp, .txt
-- **Console** integree avec pause/play/clear
+- **Console** intégrée avec pause/play/clear
 - **Import/export** de fichiers depuis/vers le disque local
-- **Integration Capytale** via le protocole de contrats `@capytale/app-agent`
+- **Intégration Capytale** via le protocole de contrats `@capytale/app-agent`
 
 ## Architecture
 
-Le projet est une application **100% statique** (HTML + CSS + JS), sans serveur backend ni etape de build.
+Le projet est une application **100% statique** (HTML + CSS + JS), sans serveur backend ni étape de build.
 
 ```
-index.html              Application principale (editeur + gestion fichiers + RPC)
-iframe-screen.html      Iframe d'execution du code Python/Pyxel
-iframe-pyxres.html      Iframe d'edition des ressources Pyxel (.pyxres)
+index.html              Application principale (éditeur + gestion fichiers + RPC)
+iframe-screen.html      Iframe d'exécution du code Python/Pyxel
+iframe-pyxres.html      Iframe d'édition des ressources Pyxel (.pyxres)
 assets/
-  css/                  Bootstrap + styles personnalises
+  css/                  Bootstrap + styles personnalisés
   js/                   Ace Editor, Bootstrap, Split Grid
-  fontawesome/          Icones
+  fontawesome/          Icônes
   img/                  Logo, cheatsheet, palette
   wasm/                 Pyxel CSS
 ```
 
-### Flux d'execution
+### Flux d'exécution
 
-1. L'utilisateur ecrit du code Python dans l'editeur Ace (`index.html`)
-2. Au clic sur **Play**, le code et les ressources sont sauvegardes dans `localStorage`
-3. Une iframe (`iframe-screen.html`) est creee, charge Pyodide + Pyxel WASM
-4. Le script Python lit les fichiers depuis `localStorage`, les ecrit dans le VFS Pyodide, puis execute le fichier cible
+1. L'utilisateur écrit du code Python dans l'éditeur Ace (`index.html`)
+2. Au clic sur **Play**, le code et les ressources sont sauvegardés dans `localStorage`
+3. Une iframe (`iframe-screen.html`) est créée, charge Pyodide + Pyxel WASM
+4. Le script Python lit les fichiers depuis `localStorage`, les écrit dans le VFS Pyodide, puis exécute le fichier cible
 
 ### Communication entre iframes
 
-- **index.html <-> iframe-screen.html** : via `localStorage` (donnees partagees) et `window.pyxelContext` (acces au VFS Pyodide)
-- **index.html <-> iframe-pyxres.html** : meme principe, avec un mecanisme de sauvegarde silencieuse (F13 + lecture VFS) pour synchroniser les ressources editees
+- **index.html <-> iframe-screen.html** : via `localStorage` (données partagées) et `window.pyxelContext` (accès au VFS Pyodide)
+- **index.html <-> iframe-pyxres.html** : même principe, avec un mécanisme de sauvegarde silencieuse (F13 + lecture VFS) pour synchroniser les ressources éditées
 
-### Stockage des donnees
+### Stockage des données
 
-Toutes les donnees sont stockees dans `localStorage` sous la cle `capytale_pyxel_studio_data` au format JSON :
+Toutes les données sont stockées dans `localStorage` sous la clé `capytale_pyxel_studio_data` au format JSON :
 
 ```json
 {
@@ -54,34 +56,34 @@ Toutes les donnees sont stockees dans `localStorage` sous la cle `capytale_pyxel
 }
 ```
 
-- Les fichiers `.py` et `.txt` sont stockes en texte brut
-- Les fichiers `.pyxres` et `.pyxapp` sont stockes en base64
+- Les fichiers `.py` et `.txt` sont stockés en texte brut
+- Les fichiers `.pyxres` et `.pyxapp` sont stockés en base64
 
-## Integration Capytale
+## Intégration Capytale
 
 ### Protocole
 
-L'application utilise le package [`@capytale/app-agent`](https://www.npmjs.com/package/@capytale/app-agent) charge dynamiquement via CDN (jsdelivr). Le contrat implemente est **`simple-content(json):1`**.
+L'application utilise le package [`@capytale/app-agent`](https://www.npmjs.com/package/@capytale/app-agent) chargé dynamiquement via CDN (jsdelivr). Le contrat implémenté est **`simple-content(json):1`**.
 
 ### Contrat simple-content(json)
 
 L'application expose au MetaPlayer :
 
-| Methode | Description |
+| Méthode | Description |
 |---------|-------------|
-| `loadContent(content)` | Recoit le contenu JSON depuis Capytale. `content` est un objet `{ "fichier": "contenu", ... }`. Si `null` ou vide, les fichiers par defaut sont charges. |
+| `loadContent(content)` | Reçoit le contenu JSON depuis Capytale. `content` est un objet `{ "fichier": "contenu", ... }`. Si `null` ou vide, les fichiers par défaut sont chargés. |
 | `getContent()` | Retourne l'objet JSON contenant tous les fichiers (code + ressources en base64). |
-| `contentSaved()` | Callback appele par Capytale apres une sauvegarde reussie. |
+| `contentSaved()` | Callback appelé par Capytale après une sauvegarde réussie. |
 
-L'application appelle cote MetaPlayer :
+L'application appelle côté MetaPlayer :
 
-| Methode | Description |
+| Méthode | Description |
 |---------|-------------|
-| `contentChanged()` | Notifie Capytale qu'une modification a eu lieu (edition de code, ajout/suppression de fichier, modification de ressource). |
+| `contentChanged()` | Notifie Capytale qu'une modification a eu lieu (édition de code, ajout/suppression de fichier, modification de ressource). |
 
 ### Mode standalone
 
-Quand l'application n'est pas dans une iframe Capytale (`window.parent === window`), le RPC est ignore et l'application fonctionne de maniere autonome avec `localStorage` uniquement.
+Quand l'application n'est pas dans une iframe Capytale (`window.parent === window`), le RPC est ignoré et l'application fonctionne de manière autonome avec `localStorage` uniquement.
 
 ### Code RPC
 
@@ -106,19 +108,19 @@ socket.plugsDone();
 
 ## Test dans le Capytale Playground
 
-Le [Capytale Playground](https://github.com/capytale/capytale-playground) permet de tester l'application avant integration dans Capytale.
+Le [Capytale Playground](https://github.com/capytale/capytale-playground) permet de tester l'application avant intégration dans Capytale.
 
 ### Configuration du Playground
 
-| Parametre | Valeur |
+| Paramètre | Valeur |
 |-----------|--------|
-| **IFrame URL** | URL ou l'application est servie (ex: `https://capytale-pyxelstudio-v2/`) |
+| **IFrame URL** | URL où l'application est servie (ex: `https://capytale-pyxelstudio-v2/`) |
 | **Contrat de sauvegarde** | `simple-content(json)` |
 | **Permissions iframe** | `fullscreen` |
 
 ### Lancer en local
 
-L'application etant 100% statique, il suffit de servir le dossier avec n'importe quel serveur HTTP :
+L'application étant 100% statique, il suffit de servir le dossier avec n'importe quel serveur HTTP :
 
 ```bash
 # Avec Python
@@ -133,18 +135,18 @@ php -S localhost:8000
 
 Puis ouvrir `http://localhost:8000` dans le navigateur.
 
-> **Note** : pour tester l'integration Capytale, l'application doit etre accessible en HTTPS (requis par le protocole postMessage/comlink).
+> **Note** : pour tester l'intégration Capytale, l'application doit être accessible en HTTPS (requis par le protocole postMessage/comlink).
 
-## Dependances externes (CDN)
+## Dépendances externes (CDN)
 
-| Dependance | Usage | CDN |
+| Dépendance | Usage | CDN |
 |------------|-------|-----|
-| [Pyxel WASM](https://github.com/kitao/pyxel) | Moteur de jeu retro | `cdn.jsdelivr.net/gh/kitao/pyxel/wasm/` |
+| [Pyxel WASM](https://github.com/kitao/pyxel) | Moteur de jeu rétro | `cdn.jsdelivr.net/gh/kitao/pyxel/wasm/` |
 | [Pyodide](https://pyodide.org/) v0.23.1 | Runtime Python WebAssembly | `cdn.jsdelivr.net/pyodide/` |
 | [@capytale/app-agent](https://www.npmjs.com/package/@capytale/app-agent) | Communication RPC avec Capytale | `cdn.jsdelivr.net/npm/@capytale/app-agent/` |
-| [Ace Editor](https://ace.c9.io/) | Editeur de code | Local (`assets/js/ace/`) |
+| [Ace Editor](https://ace.c9.io/) | Éditeur de code | Local (`assets/js/ace/`) |
 | [Bootstrap](https://getbootstrap.com/) 5 | UI framework | Local (`assets/css/`, `assets/js/`) |
-| [Font Awesome](https://fontawesome.com/) | Icones | Local (`assets/fontawesome/`) |
+| [Font Awesome](https://fontawesome.com/) | Icônes | Local (`assets/fontawesome/`) |
 | [Split.js](https://split.js.org/) | Panneaux redimensionnables | Local (`assets/js/split-grid.js`, `assets/js/split.min.js`) |
 
 ## Documentation Pyxel
