@@ -67,6 +67,21 @@
         #pills-resources_editor {
             overflow: hidden;
         }
+        #aboutModal .btn:hover,
+        #aboutModal .btn:focus,
+        #aboutModal .btn:active {
+            background: none !important;
+            color: inherit !important;
+            box-shadow: none !important;
+            transform: none !important;
+            border: none !important;
+            outline: none !important;
+            padding: 0 !important;
+            margin: 0 !important;
+        }
+        #aboutModal .btn {
+            border: none !important;
+        }
     </style>
 
 
@@ -90,7 +105,7 @@
                     <!-- ONGLETS -->
                     <ul id="pills-tab" class="nav nav-pills mb-3" role="tablist">
                         <img src="assets/img/pyxelstudio-logo.png" class="me-3" width="50" height="33"
-                            alt="Pyxel Studio" />
+                            alt="Pyxel Studio" style="cursor:pointer;" data-bs-toggle="modal" data-bs-target="#aboutModal" />
                         <li class="nav-item me-3 mb-1" role="presentation">
                             <button id="pills-documentation-tab" class="btn btn-light btn-sm" style="width:40px"
                                 data-bs-toggle="pill" data-bs-target="#pills-documentation" type="button" role="tab"
@@ -132,10 +147,10 @@
                     tabindex="0">
                     <div class="mt-2 mb-3">
                         <span class="ms-1"><button class="btn btn-sm btn-light" onclick="addFilePrompt()"
-                                data-bs-toggle="tooltip" data-bs-title="add a file"><i class="fa-solid fa-plus"></i></button></span>
+                                data-bs-toggle="tooltip" data-bs-title="ajouter un fichier"><i class="fa-solid fa-plus"></i></button></span>
                         <span class="ms-2">
                             <label for="upload_files" class="btn btn-sm btn-light m-0" data-bs-toggle="tooltip"
-                                data-bs-title="upload files" style="cursor:pointer">
+                                data-bs-title="importer des fichiers" style="cursor:pointer">
                                 <i class="fa-solid fa-arrow-up-from-bracket"></i>
                             </label>
                             <input type="file" id="upload_files" accept=".py,.txt,.pyxres,.pyxapp" multiple
@@ -152,22 +167,22 @@
                 <div id="pills-documentation" class="tab-pane fade" role="tabpanel"
                     aria-labelledby="pills-documentation-tab" tabindex="0">
                     <div class="mt-2 mb-5">
-                        <b>PYXEL DOCUMENTATION</b>
+                        <b>DOCUMENTATION PYXEL</b>
                         <ul class="mt-2">
-                            <li>Version: <span class="font-monospace text-success fw-bold">2.8.7</span></li>
-                            <li>Official documentation: <a href="https://kitao.github.io/pyxel/web/user-guide/"
+                            <li>Version : <span class="font-monospace text-success fw-bold">2.8.7</span></li>
+                            <li>Documentation officielle : <a href="https://kitao.github.io/pyxel/web/user-guide/"
                                     class="btn btn-light btn-sm mb-1" role="button" target="_blank"><i
                                         class="fa-solid fa-book"></i></a></li>
                         </ul>
                         <div class="text-center font-monospace">
                             <div><img src="assets/img/pyxel-palette.png" class="img-fluid" /></div>
-                            <div style="font-size:70%;color:silver;">source: <a
+                            <div style="font-size:70%;color:silver;">source : <a
                                     href="https://github.com/kitao/pyxel">github.com/kitao/pyxel</a></div>
                             <div><img src="assets/img/pyxel-screen-tilemap.png" class="mt-3 img-fluid" /></div>
-                            <div style="font-size:70%;color:silver;">source: <a
+                            <div style="font-size:70%;color:silver;">source : <a
                                     href="https://github.com/kitao/pyxel">github.com/kitao/pyxel</a></div>
                             <div><img src="assets/img/pyxel-cheatsheet.png" class="mt-3 img-fluid" /></div>
-                            <div style="font-size:70%;color:silver;">source: <a
+                            <div style="font-size:70%;color:silver;">source : <a
                                     href="https://github.com/godangdo-watermelon/pyxel-cheat-sheet">github.com/godangdo-watermelon/pyxel-cheat-sheet</a>
                             </div>
                         </div>
@@ -208,8 +223,8 @@
         <div style="overflow-y:hidden;padding:0px;margin:0px;height:100%;background-color:#111;">
             <div id="pyxel-screen" class="text-center"
                 style="height:100%;position:relative;padding:0px;margin:0px;color:white;">
-                <div class="font-monospace mt-5 pt-5">click on <button type="button" id="btn-run-code-center"
-                        class="btn btn-warning btn-sm ps-3 pe-3"><i class="fas fa-play"></i></button> to run the code
+                <div class="font-monospace mt-5 pt-5">cliquez sur <button type="button" id="btn-run-code-center"
+                        class="btn btn-warning btn-sm ps-3 pe-3"><i class="fas fa-play"></i></button> pour exécuter le code
                 </div>
             </div>
         </div>
@@ -418,6 +433,13 @@
             document.getElementById('btn-run-code-center').addEventListener("click", run_pyxel);
         }
 
+        // Précharger l'iframe de l'éditeur de ressources pour un affichage instantané
+        (function preloadResourceEditor() {
+            const container = document.getElementById('pyxel-editor');
+            const iframeSrc = `iframe-pyxres.html?edit=${encodeURIComponent(active_pyxres)}`;
+            container.innerHTML = `<iframe src='${iframeSrc}' width='100%' frameborder='0' scrolling='no' style='height:100%'></iframe>`;
+        })();
+
         function open_resources_tab() {
             const iframeSrc = `iframe-pyxres.html?edit=${encodeURIComponent(active_pyxres)}`;
             const container = document.getElementById('pyxel-editor');
@@ -456,28 +478,28 @@
                 let actionBtn = `<button class="btn btn-light btn-sm" style="width:35px" disabled><i class="fa-solid fa-bars-staggered"></i></button>`;
 
                 if (ext === 'py') {
-                    actionBtn = `<button class="btn btn-light btn-sm" onclick="editPythonFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="edit" style="width:35px"><i class="fa-solid fa-code"></i></button>`;
+                    actionBtn = `<button class="btn btn-light btn-sm" onclick="editPythonFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="éditer" style="width:35px"><i class="fa-solid fa-code"></i></button>`;
                 } else if (ext === 'pyxres') {
-                    actionBtn = `<button class="btn btn-light btn-sm" onclick="editPyxresFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="edit" style="width:35px"><i class="fa-solid fa-paintbrush"></i></button>`;
+                    actionBtn = `<button class="btn btn-light btn-sm" onclick="editPyxresFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="éditer" style="width:35px"><i class="fa-solid fa-paintbrush"></i></button>`;
                 } else if (ext === 'pyxapp') {
-                    actionBtn = `<button class="btn btn-light btn-sm" onclick="playPyxappFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="play" style="width:35px"><i class="fas fa-play"></i></button>`;
+                    actionBtn = `<button class="btn btn-light btn-sm" onclick="playPyxappFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="jouer" style="width:35px"><i class="fas fa-play"></i></button>`;
                 }
 
                 let deleteBtn = '';
                 let renameBtn = '';
                 if (filename !== 'app.py' && filename !== 'res.pyxres') {
-                    renameBtn = `<a tabindex="0" style="cursor:pointer" class="text-primary ms-2" onclick="renameFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="rename"><i class="fa-solid fa-pen" style="font-size:90%"></i></a>`;
-                    deleteBtn = `<a tabindex="0" style="cursor:pointer" class="text-danger ms-2" onclick="deleteFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="delete"><i class="fa-solid fa-trash" style="font-size:90%"></i></a>`;
+                    renameBtn = `<a tabindex="0" style="cursor:pointer" class="text-primary ms-2" onclick="renameFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="renommer"><i class="fa-solid fa-pen" style="font-size:90%"></i></a>`;
+                    deleteBtn = `<a tabindex="0" style="cursor:pointer" class="text-danger ms-3" onclick="deleteFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="supprimer"><i class="fa-solid fa-trash" style="font-size:90%"></i></a>`;
                 }
 
-                let downloadBtn = `<a style="cursor:pointer" class="text-dark me-2" onclick="downloadFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="download"><i class="fa-solid fa-circle-down"></i></a>`;
+                let downloadBtn = `<a style="cursor:pointer" class="text-dark ms-3" onclick="downloadFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="télécharger"><i class="fa-solid fa-circle-down"></i></a>`;
 
                 li.innerHTML = `
                 <span class="small">
                     ${actionBtn}
                     <span class="ms-1 ${filename === active_py || filename === active_pyxres ? 'fw-bold text-primary' : ''}">${filename}</span>
                 </span>
-                <span>${downloadBtn}${renameBtn}${deleteBtn}</span>
+                <span>${renameBtn}${deleteBtn}${downloadBtn}</span>
             `;
                 listContainer.appendChild(li);
             });
@@ -532,18 +554,18 @@
         }
 
         function addFilePrompt() {
-            const filename = prompt("Enter new filename (e.g., script.py or assets.pyxres):");
+            const filename = prompt("Nom du nouveau fichier (ex : script.py ou assets.pyxres) :");
             if (!filename) return;
 
             let ext = filename.split('.').pop();
             if (ext !== 'py' && ext !== 'pyxres' && ext !== 'txt') {
-                alert("Only .py, .pyxres, or .txt files can be created.");
+                alert("Seuls les fichiers .py, .pyxres ou .txt peuvent être créés.");
                 return;
             }
 
             const json = JSON.parse(localStorage.getItem('capytale_pyxel_studio_data'));
             if (json[filename] !== undefined) {
-                alert("File already exists.");
+                alert("Ce fichier existe déjà.");
                 return;
             }
 
@@ -604,7 +626,7 @@
         }
 
         function deleteFile(filename) {
-            if (confirm(`Are you sure you want to delete ${filename}?`)) {
+            if (confirm(`Êtes-vous sûr de vouloir supprimer ${filename} ?`)) {
                 const json = JSON.parse(localStorage.getItem('capytale_pyxel_studio_data'));
                 delete json[filename];
                 localStorage.setItem('capytale_pyxel_studio_data', JSON.stringify(json));
@@ -701,6 +723,31 @@
             }],
         });
     </script>
+
+    <!-- Modal À propos -->
+    <div class="modal fade" id="aboutModal" tabindex="-1" aria-labelledby="aboutModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header d-flex align-items-center border-0">
+                    <img src="assets/img/pyxelstudio-logo.png" width="50" height="33" alt="Pyxel Studio" class="me-2" />
+                    <h6 class="modal-title font-monospace fw-bold mb-0" id="aboutModalLabel">Pyxel Studio</h6>
+                    <button type="button" class="btn p-0 ms-auto" style="position:absolute;top:10px;right:12px;text-decoration:none;box-shadow:none;" data-bs-dismiss="modal" aria-label="Fermer"><i class="fa-solid fa-square-xmark fa-xl"></i></button>
+                </div>
+                <div class="modal-body">
+                    <p class="mb-2"><strong>Auteur :</strong> <a href="https://laurentabbal.forge.apps.education.fr/" target="_blank">Laurent Abbal</a></p>
+                    <p class="mb-2"><strong>Licence :</strong> <a href="https://www.gnu.org/licenses/agpl-3.0.txt" target="_blank">AGPL v3</a></p>
+                    <p class="mb-4"><strong>Site :</strong> <a href="https://www.pyxelstudio.net" target="_blank">www.pyxelstudio.net</a></p>
+                    <div class="text-center">
+                        <a href="https://mastodon.social/@pyxelstudio" target="_blank" class="text-dark me-3"><i class="fa-brands fa-mastodon fa-lg"></i></a>
+                        <a href="https://bsky.app/profile/pyxelstudio.bsky.social" target="_blank" class="text-dark me-3"><i class="fa-brands fa-bluesky fa-lg"></i></a>
+                        <a href="https://x.com/pyxel_studio" target="_blank" class="text-dark me-3"><i class="fa-brands fa-x-twitter fa-lg"></i></a>
+                        <a href="https://www.linkedin.com/company/pyxel-studio" target="_blank" class="text-dark"><i class="fa-brands fa-linkedin fa-lg"></i></a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
 </body>
 
 </html>

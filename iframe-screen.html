@@ -67,9 +67,19 @@
         #pyxel_screen {
             background-color:#030303 !important;
         }
+        /* Masquer tout le conteneur Pyxel par défaut, ne le révéler que quand pyxel-ready est ajouté */
+        #pyxel-screen {
+            visibility: hidden !important;
+            background-color: #030303;
+        }
+        #pyxel-screen.pyxel-ready,
+        #pyxel-screen.pyxel-error {
+            visibility: visible !important;
+            background-color: #030303;
+        }
     </style>
 
-    <title>Pyxel Player</title>
+    <title>Lecteur Pyxel</title>
 </head>
 
 <body>
@@ -79,7 +89,11 @@
         <div id="split-0" style="position:relative;">
 
             <div style="position:absolute;right:0px;top:2px;z-index:10000;">
-                <button tabindex="1" type="button" class="btn btn-light btn-sm p-2 pt-1 pb-0 me-2 mt-2" onclick="fullscreen('pyxel-screen')" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="fullscreen mode"><i class="fa-solid fa-expand"></i></button>
+                <button tabindex="1" type="button" class="btn btn-light btn-sm p-2 pt-1 pb-0 me-2 mt-2" onclick="fullscreen('pyxel-screen')" data-bs-toggle="tooltip" data-bs-placement="left" data-bs-title="plein écran"><i class="fa-solid fa-expand"></i></button>
+            </div>
+
+            <div id="pyxel-splash" style="position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;background-color:#030303;z-index:9999;">
+                <img src="assets/img/pyxel_logo_152x64.png" alt="Pyxel" style="opacity:0.7;">
             </div>
 
             <div id="pyxel-screen" class="text-center" style="height:100%;"></div>
@@ -134,7 +148,8 @@
 			}
 			if (message !== 'Wake Lock active.' && message !== 'Wake Lock released.'
 			&& !(typeof message === 'object' && message !== null && message.command === 'run')
-			&& !(typeof message === 'string' && message.startsWith("Attempting to fetch"))) {
+			&& !(typeof message === 'string' && message.startsWith("Attempting to fetch"))
+			&& !(typeof message === 'string' && message.startsWith("Attempting to import"))) {
 				if (message == 'Loading pyxel') message = 'Chargement de Pyxel ' + (window._pyxelVersion || '') + ' ...';
 				if (message == 'Loaded pyxel') message = 'Prêt!';
 				writeToConsole(message);
@@ -143,12 +158,17 @@
 
 		// Nettoyer un traceback Python pour ne garder que les lignes utiles
 		function cleanTraceback(msg) {
-			if (typeof msg !== 'string' || !msg.includes('Traceback')) return msg;
+			if (typeof msg !== 'string') return msg;
+			// Retirer le préfixe "PythonError: " ajouté par Pyodide
+			msg = msg.replace(/^PythonError:\s*/g, '');
+			if (!msg.includes('Traceback')) return msg;
 			var lines = msg.split('\n');
 			var cleaned = [];
 			var keepNext = false;
 			for (var i = 0; i < lines.length; i++) {
 				var line = lines[i];
+				// Ignorer les lignes d'info Pyodide (module disponible, lien doc...)
+				if (line.startsWith('The module ') || line.startsWith('You can install') || line.startsWith('See http')) continue;
 				// Garder la ligne d'erreur finale (SyntaxError, TypeError, etc.)
 				if (!line.startsWith(' ') && !line.startsWith('Traceback') && line.trim() !== '') {
 					cleaned.push(line);
@@ -176,36 +196,62 @@
 			return msg;
 		}
 
+		// Anti-doublon : ne pas afficher la même erreur plusieurs fois
+		var _shownErrors = [];
+		function showError(message) {
+			if (typeof message !== 'string') return;
+			// Retirer tous les préfixes PythonError (début et intérieurs)
+			message = message.replace(/PythonError:\s*/g, '');
+			// Si le message contient plusieurs tracebacks concaténés, ne garder que le premier
+			var parts = message.split(/(?=Traceback \(most recent call last\))/);
+			if (parts.length > 1) message = parts[0] + parts[1];
+			var cleaned = cleanTraceback(message);
+			// Extraire la ligne XxxError: ... pour la comparaison anti-doublon
+			var match = cleaned.match(/(\w+Error:.+)/);
+			var key = match ? match[1].trim() : cleaned.trim();
+			if (_shownErrors.indexOf(key) !== -1) return;
+			_shownErrors.push(key);
+			writeToConsole(cleaned, '#ff6b6b');
+			hideGameError();
+		}
+
 		console.error = function (message) {
 			oldError.apply(console, arguments);
-			writeToConsole(cleanTraceback(message), '#ff6b6b');
+			if (typeof message === 'string') showError(message);
 		}
 
 		// Observer le DOM pour remplacer l'affichage d'erreur Pyxel
 		var errorObserver = new MutationObserver(function() {
 			var screen = document.getElementById('pyxel-screen');
 			if (!screen) return;
-			if (screen.textContent.includes('Traceback') || screen.textContent.includes('SyntaxError') || screen.textContent.includes('NameError') || screen.textContent.includes('TypeError') || screen.textContent.includes('ValueError') || screen.textContent.includes('AttributeError') || screen.textContent.includes('IndentationError')) {
+			if (screen.textContent.includes('Traceback') || screen.textContent.includes('SyntaxError') || screen.textContent.includes('NameError') || screen.textContent.includes('TypeError') || screen.textContent.includes('ValueError') || screen.textContent.includes('AttributeError') || screen.textContent.includes('IndentationError') || screen.textContent.includes('ModuleNotFoundError')) {
 				errorObserver.disconnect();
-				screen.innerHTML = '<div class="font-monospace text-center" style="padding-top:40%;color:#ff6b6b;font-size:1.2em;">Erreur, voir console ci-dessous</div>';
+				screen.innerHTML = '<div class="font-monospace text-center" style="padding-top:15%;color:#ff6b6b;font-size:1.2em;">Erreur, voir console ci-dessous</div>';
 			}
 		});
 		errorObserver.observe(document.getElementById('pyxel-screen'), { childList: true, subtree: true, characterData: true });
 
+		window._hasError = false;
 		function hideGameError() {
-			// L'observer s'en charge automatiquement
+			window._hasError = true;
+			var container = document.getElementById('pyxel-screen');
+			if (container) {
+				container.classList.remove('pyxel-ready');
+				var splash = document.getElementById('pyxel-splash');
+				if (splash) splash.remove();
+				container.classList.add('pyxel-error');
+				container.innerHTML = '<div class="font-monospace text-center" style="padding-top:15%;color:#ff6b6b;font-size:1.2em;">Erreur, voir console ci-dessous</div>';
+			}
 		}
 
 		// Capturer les erreurs Python non gérées (Pyodide/Pyxel)
 		window.addEventListener('error', function (e) {
-			writeToConsole(cleanTraceback(e.message || e), '#ff6b6b');
-			hideGameError();
+			showError(e.message || String(e));
 		});
 		window.addEventListener('unhandledrejection', function (e) {
-			var msg = e.reason?.message || e.reason || 'Erreur inconnue';
+			var msg = e.reason?.message || e.reason || '';
 			if (typeof msg === 'string' && (msg.includes('Traceback') || msg.includes('Error'))) {
-				writeToConsole(cleanTraceback(msg), '#ff6b6b');
-				hideGameError();
+				showError(msg);
 			}
 		});
 	})();
@@ -245,20 +291,102 @@ for filename, content in pyxel_data.items():
 
 url_params = js.URLSearchParams.new(js.window.location.search)
 run_file = url_params.get('run') or 'app.py'
-if run_file.endswith('.pyxapp'):
-    pyxel.cli.play_pyxel_app(run_file)
+
+# Détecter les packages manquants dans le code utilisateur
+from pyodide.code import find_imports
+import importlib
+to_install = []
+if not run_file.endswith('.pyxapp'):
+    with open(run_file, 'r') as f:
+        user_code = f.read()
+    for mod in find_imports(user_code):
+        try:
+            importlib.import_module(mod)
+        except ImportError:
+            to_install.append(mod)
+
+if to_install:
+    # Passer la liste au JavaScript pour chargement async
+    from pyodide.ffi import to_js
+    js.window._pendingPackages = to_js(to_install)
+    js.window._pendingRunFile = run_file
+    print('Installation de ' + ', '.join(to_install) + ' ...')
 else:
-    pyxel.cli.run_python_script(run_file)
+    if run_file.endswith('.pyxapp'):
+        pyxel.cli.play_pyxel_app(run_file)
+    else:
+        pyxel.cli.run_python_script(run_file)
 	  "
 	></pyxel-run>
     <script>
-        // Skip 'click to start' screen automatically
+        // Chargement async des packages manquants puis exécution du code
+        var _loadRetries = 0;
+        function loadPackagesAndRun() {
+            _loadRetries++;
+            // Attendre que le script pyxel-run ait défini _pendingPackages (ou pas)
+            if (!window._pendingPackages) {
+                if (_loadRetries < 300) setTimeout(loadPackagesAndRun, 100); // 30s max
+                return;
+            }
+            // Attendre que Pyodide soit prêt
+            var pyodide = window.pyxelContext?.pyodide;
+            if (!pyodide || !pyodide.loadPackage) {
+                if (_loadRetries < 300) setTimeout(loadPackagesAndRun, 100);
+                return;
+            }
+
+            var packages = Array.from(window._pendingPackages);
+            var runFile = window._pendingRunFile;
+            delete window._pendingPackages;
+            delete window._pendingRunFile;
+
+            function runUserCode() {
+                if (runFile.endsWith('.pyxapp')) {
+                    pyodide.runPython("import pyxel.cli; pyxel.cli.play_pyxel_app('" + runFile + "')");
+                } else {
+                    pyodide.runPython("import pyxel.cli; pyxel.cli.run_python_script('" + runFile + "')");
+                }
+            }
+
+            // Charger les packages un par un pour identifier ceux qui échouent
+            var failed = [];
+            var chain = Promise.resolve();
+            packages.forEach(function(pkg) {
+                chain = chain.then(function() {
+                    return pyodide.loadPackage(pkg, {messageCallback: function(msg) {
+                        console.log(msg);
+                    }}).catch(function() {
+                        failed.push(pkg);
+                    });
+                });
+            });
+            chain.then(function() {
+                if (failed.length > 0) {
+                    var plural = failed.length > 1;
+                    console.log('Module' + (plural ? 's' : '') + ' ' + failed.join(', ') + ' indisponible' + (plural ? 's' : '') + '. Vous ne pouvez pas utiliser ' + (plural ? 'ces modules.' : 'ce module.'));
+                }
+                console.log('Prêt!');
+                runUserCode();
+            });
+        }
+        loadPackagesAndRun();
+
+        // Masquer le canvas pendant le "Click to start" puis le révéler
         function skipClickToStart() {
             if (window.pyxelContext?.resolveInput) {
                 window.pyxelContext.resolveInput();
-                // Call it again a bit later to be sure (it might be ignored if called too early)
-                setTimeout(() => window.pyxelContext.resolveInput?.(), 100);
-                setTimeout(() => window.pyxelContext.resolveInput?.(), 500);
+                setTimeout(function() {
+                    window.pyxelContext.resolveInput?.();
+                }, 100);
+                // Révéler le conteneur après un délai, sauf si une erreur s'est produite
+                setTimeout(function() {
+                    var container = document.getElementById('pyxel-screen');
+                    if (container && !window._hasError) {
+                        var splash = document.getElementById('pyxel-splash');
+                        if (splash) splash.remove();
+                        container.classList.add('pyxel-ready');
+                    }
+                }, 1000);
             } else {
                 setTimeout(skipClickToStart, 10);
             }
