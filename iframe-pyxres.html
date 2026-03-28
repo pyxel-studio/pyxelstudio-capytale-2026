@@ -63,9 +63,9 @@ pyxel.cli.edit_pyxel_resource(edit_file)
 	  "
 	></pyxel-run>
     <script>
-        // --- AGGRESSIVE SILENT AUTO-SAVE HOOK ---
-        
-        // 1. Helper to convert Uint8Array to Base64
+        // --- SAUVEGARDE AUTOMATIQUE SILENCIEUSE ---
+
+        // 1. Convertir Uint8Array en Base64
         function uint8ToBase64(buffer) {
             let binary = "";
             let bytes = new Uint8Array(buffer);
@@ -76,7 +76,7 @@ pyxel.cli.edit_pyxel_resource(edit_file)
             return window.btoa(binary);
         }
 
-        // 2. The Silent Save Logic
+        // 2. Logique de sauvegarde silencieuse
         function silentSave(filename) {
             if (!window.pyxelContext?.pyodide) return;
             try {
@@ -97,21 +97,21 @@ pyxel.cli.edit_pyxel_resource(edit_file)
                     indicator.className = "ms-1 text-success small";
                     setTimeout(() => indicator.innerText = "", 2000);
                 }
-                console.log("Aggressive silent save complete for:", name);
+                console.log("Sauvegarde silencieuse effectuée pour :", name);
             } catch (e) {
-                console.error("Aggressive silent save failed:", e);
+                console.error("Échec de la sauvegarde silencieuse :", e);
             }
         }
 
-        // 3. Prevent pyxel.js from overriding our hook
+        // 3. Empêcher pyxel.js de remplacer notre hook
         let _realHook = (filename) => silentSave(filename);
         Object.defineProperty(window, '_savePyxelFile', {
             get: () => _realHook,
-            set: (val) => { console.log("Blocking Pyxel attempt to set _savePyxelFile"); },
+            set: (val) => { console.log("Tentative de Pyxel de remplacer _savePyxelFile bloquée"); },
             configurable: false
         });
 
-        // 4. Block download attempts via <a> tags (Second line of defense)
+        // 4. Bloquer les tentatives de téléchargement via les balises <a> (seconde ligne de défense)
         const originalCreateElement = document.createElement;
         document.createElement = function(tagName) {
             const el = originalCreateElement.call(document, tagName);
@@ -119,8 +119,8 @@ pyxel.cli.edit_pyxel_resource(edit_file)
                 const originalClick = el.click;
                 el.click = function() {
                     if (this.download && (this.href.startsWith('blob:') || this.href.startsWith('data:'))) {
-                        console.log("Blocked download attempt for:", this.download);
-                        // Still perform the silent save just in case this was triggered by a save button
+                        console.log("Tentative de téléchargement bloquée pour :", this.download);
+                        // Sauvegarder quand même au cas où c'est déclenché par le bouton de sauvegarde
                         silentSave(this.download);
                         return; 
                     }
@@ -130,7 +130,7 @@ pyxel.cli.edit_pyxel_resource(edit_file)
             return el;
         };
 
-        // Skip 'click to start' screen automatically
+        // Passer automatiquement l'écran "Click to start"
         function skipClickToStart() {
             if (window.pyxelContext?.resolveInput) {
                 window.pyxelContext.resolveInput();
