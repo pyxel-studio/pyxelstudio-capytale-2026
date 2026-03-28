@@ -134,8 +134,11 @@
 			if (!console_textarea) return;
 			var text = (typeof message === 'object')
 				? (JSON && JSON.stringify ? JSON.stringify(message) : message)
-				: message;
-			console_textarea.innerHTML += (color ? '<span style="color:' + color + '">' + text + '</span>' : text) + "\n";
+				: String(message);
+			var span = document.createElement('span');
+			span.textContent = text + "\n";
+			if (color) span.style.color = color;
+			console_textarea.appendChild(span);
 			console_textarea.scrollTop = console_textarea.scrollHeight;
 		}
 
@@ -321,17 +324,24 @@ else:
     <script>
         // Chargement async des packages manquants puis exécution du code
         var _loadRetries = 0;
+        var _loadDelay = 100; // Délai initial en ms
         function loadPackagesAndRun() {
             _loadRetries++;
             // Attendre que le script pyxel-run ait défini _pendingPackages (ou pas)
             if (!window._pendingPackages) {
-                if (_loadRetries < 300) setTimeout(loadPackagesAndRun, 100); // 30s max
+                if (_loadDelay < 30000) { // 30s max cumulé
+                    setTimeout(loadPackagesAndRun, _loadDelay);
+                    _loadDelay = Math.min(_loadDelay * 1.5, 2000); // Backoff progressif, max 2s
+                }
                 return;
             }
             // Attendre que Pyodide soit prêt
             var pyodide = window.pyxelContext?.pyodide;
             if (!pyodide || !pyodide.loadPackage) {
-                if (_loadRetries < 300) setTimeout(loadPackagesAndRun, 100);
+                if (_loadDelay < 30000) {
+                    setTimeout(loadPackagesAndRun, _loadDelay);
+                    _loadDelay = Math.min(_loadDelay * 1.5, 2000);
+                }
                 return;
             }
 

@@ -249,6 +249,30 @@
             if (_capytaleContentChanged) _capytaleContentChanged();
         }
 
+        // Fonction utilitaire : créer une iframe de manière sûre (pas de innerHTML)
+        function createIframe(src) {
+            var iframe = document.createElement('iframe');
+            iframe.src = src;
+            iframe.width = '100%';
+            iframe.frameBorder = '0';
+            iframe.scrolling = 'no';
+            iframe.style.height = '100%';
+            return iframe;
+        }
+
+        // Fonction utilitaire : lire les données localStorage avec gestion d'erreur
+        function getStorageData() {
+            try {
+                var data = localStorage.getItem('capytale_pyxel_studio_data');
+                if (!data) return {};
+                var parsed = JSON.parse(data);
+                return (parsed && typeof parsed === 'object') ? parsed : {};
+            } catch (e) {
+                console.error('Données localStorage corrompues, réinitialisation.', e);
+                return {};
+            }
+        }
+
         function initApp() {
             // --- Tooltips et Popovers ---
             const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
@@ -340,7 +364,7 @@
                         renderFilesList();
                     },
                     getContent() {
-                        var json = JSON.parse(localStorage.getItem('capytale_pyxel_studio_data'));
+                        var json = getStorageData();
                         json[active_py] = code_editor.getSession().getValue();
                         return json;
                     },
@@ -406,7 +430,7 @@
                 await new Promise(resolve => setTimeout(resolve, 150)); // Attente pour le flush
 
                 const resData = uint8ToBase64(context.pyodide.FS.readFile(`/pyxel_working_directory/${active_pyxres}`));
-                const json = JSON.parse(localStorage.getItem('capytale_pyxel_studio_data') || '{}');
+                const json = getStorageData() || {};
                 json[active_pyxres] = resData;
                 localStorage.setItem('capytale_pyxel_studio_data', JSON.stringify(json));
 
@@ -417,7 +441,7 @@
         }
 
         async function updateActivePythonFileContent() {
-            const json = JSON.parse(localStorage.getItem('capytale_pyxel_studio_data'));
+            const json = getStorageData();
             json[active_py] = code_editor.getSession().getValue();
             localStorage.setItem('capytale_pyxel_studio_data', JSON.stringify(json));
         }
@@ -426,7 +450,9 @@
             await forceSavePyxelResource().catch(e => console.warn("Background save failed:", e));
             await updateActivePythonFileContent();
 
-            document.getElementById('pyxel-screen').innerHTML = `<iframe src='iframe-screen.html?run=${encodeURIComponent(active_py)}' width='100%' frameborder='0' scrolling='no' style='height:100%'></iframe>`;
+            var screen = document.getElementById('pyxel-screen');
+            screen.innerHTML = '';
+            screen.appendChild(createIframe('iframe-screen.html?run=' + encodeURIComponent(active_py)));
         }
         document.getElementById('btn-run-code').addEventListener("click", run_pyxel);
         if (document.getElementById('btn-run-code-center')) {
@@ -436,16 +462,17 @@
         // Précharger l'iframe de l'éditeur de ressources pour un affichage instantané
         (function preloadResourceEditor() {
             const container = document.getElementById('pyxel-editor');
-            const iframeSrc = `iframe-pyxres.html?edit=${encodeURIComponent(active_pyxres)}`;
-            container.innerHTML = `<iframe src='${iframeSrc}' width='100%' frameborder='0' scrolling='no' style='height:100%'></iframe>`;
+            container.innerHTML = '';
+            container.appendChild(createIframe('iframe-pyxres.html?edit=' + encodeURIComponent(active_pyxres)));
         })();
 
         function open_resources_tab() {
-            const iframeSrc = `iframe-pyxres.html?edit=${encodeURIComponent(active_pyxres)}`;
+            const iframeSrc = 'iframe-pyxres.html?edit=' + encodeURIComponent(active_pyxres);
             const container = document.getElementById('pyxel-editor');
             const iframe = container.querySelector('iframe');
             if (!iframe || iframe.src.indexOf(iframeSrc) === -1) {
-                container.innerHTML = `<iframe src='${iframeSrc}' width='100%' frameborder='0' scrolling='no' style='height:100%'></iframe>`;
+                container.innerHTML = '';
+                container.appendChild(createIframe(iframeSrc));
             }
         }
         document.getElementById('pills-resources_editor-tab').addEventListener("click", open_resources_tab);
@@ -468,39 +495,91 @@
             });
 
             listContainer.innerHTML = '';
-            const json = JSON.parse(localStorage.getItem('capytale_pyxel_studio_data')) || {};
+            const json = getStorageData() || {};
+
+            // Fonction utilitaire pour échapper le HTML
+            function escapeHtml(str) {
+                var div = document.createElement('div');
+                div.textContent = str;
+                return div.innerHTML;
+            }
 
             Object.keys(json).sort().forEach(filename => {
                 const li = document.createElement('li');
                 li.className = "list-group-item d-flex justify-content-between align-items-center p-1 pe-3";
 
                 let ext = filename.split('.').pop();
-                let actionBtn = `<button class="btn btn-light btn-sm" style="width:35px" disabled><i class="fa-solid fa-bars-staggered"></i></button>`;
+                const safe = escapeHtml(filename);
+
+                // Partie gauche : bouton action + nom du fichier
+                const leftSpan = document.createElement('span');
+                leftSpan.className = 'small';
+
+                const actionBtn = document.createElement('button');
+                actionBtn.className = 'btn btn-light btn-sm';
+                actionBtn.style.width = '35px';
+                actionBtn.setAttribute('data-bs-toggle', 'tooltip');
 
                 if (ext === 'py') {
-                    actionBtn = `<button class="btn btn-light btn-sm" onclick="editPythonFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="éditer" style="width:35px"><i class="fa-solid fa-code"></i></button>`;
+                    actionBtn.setAttribute('data-bs-title', 'éditer');
+                    actionBtn.innerHTML = '<i class="fa-solid fa-code"></i>';
+                    actionBtn.addEventListener('click', function() { editPythonFile(filename); });
                 } else if (ext === 'pyxres') {
-                    actionBtn = `<button class="btn btn-light btn-sm" onclick="editPyxresFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="éditer" style="width:35px"><i class="fa-solid fa-paintbrush"></i></button>`;
+                    actionBtn.setAttribute('data-bs-title', 'éditer');
+                    actionBtn.innerHTML = '<i class="fa-solid fa-paintbrush"></i>';
+                    actionBtn.addEventListener('click', function() { editPyxresFile(filename); });
                 } else if (ext === 'pyxapp') {
-                    actionBtn = `<button class="btn btn-light btn-sm" onclick="playPyxappFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="jouer" style="width:35px"><i class="fas fa-play"></i></button>`;
+                    actionBtn.setAttribute('data-bs-title', 'jouer');
+                    actionBtn.innerHTML = '<i class="fas fa-play"></i>';
+                    actionBtn.addEventListener('click', function() { playPyxappFile(filename); });
+                } else {
+                    actionBtn.disabled = true;
+                    actionBtn.innerHTML = '<i class="fa-solid fa-bars-staggered"></i>';
                 }
 
-                let deleteBtn = '';
-                let renameBtn = '';
+                const nameSpan = document.createElement('span');
+                nameSpan.className = 'ms-1' + (filename === active_py || filename === active_pyxres ? ' fw-bold text-primary' : '');
+                nameSpan.textContent = filename;
+
+                leftSpan.appendChild(actionBtn);
+                leftSpan.appendChild(nameSpan);
+
+                // Partie droite : renommer, supprimer, télécharger
+                const rightSpan = document.createElement('span');
+
                 if (filename !== 'app.py' && filename !== 'res.pyxres') {
-                    renameBtn = `<a tabindex="0" style="cursor:pointer" class="text-primary ms-2" onclick="renameFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="renommer"><i class="fa-solid fa-pen" style="font-size:90%"></i></a>`;
-                    deleteBtn = `<a tabindex="0" style="cursor:pointer" class="text-danger ms-3" onclick="deleteFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="supprimer"><i class="fa-solid fa-trash" style="font-size:90%"></i></a>`;
+                    const renameLink = document.createElement('a');
+                    renameLink.tabIndex = 0;
+                    renameLink.style.cursor = 'pointer';
+                    renameLink.className = 'text-primary ms-2';
+                    renameLink.setAttribute('data-bs-toggle', 'tooltip');
+                    renameLink.setAttribute('data-bs-title', 'renommer');
+                    renameLink.innerHTML = '<i class="fa-solid fa-pen" style="font-size:90%"></i>';
+                    renameLink.addEventListener('click', function() { renameFile(filename); });
+                    rightSpan.appendChild(renameLink);
+
+                    const deleteLink = document.createElement('a');
+                    deleteLink.tabIndex = 0;
+                    deleteLink.style.cursor = 'pointer';
+                    deleteLink.className = 'text-danger ms-3';
+                    deleteLink.setAttribute('data-bs-toggle', 'tooltip');
+                    deleteLink.setAttribute('data-bs-title', 'supprimer');
+                    deleteLink.innerHTML = '<i class="fa-solid fa-trash" style="font-size:90%"></i>';
+                    deleteLink.addEventListener('click', function() { deleteFile(filename); });
+                    rightSpan.appendChild(deleteLink);
                 }
 
-                let downloadBtn = `<a style="cursor:pointer" class="text-dark ms-3" onclick="downloadFile('${filename}')" data-bs-toggle="tooltip" data-bs-title="télécharger"><i class="fa-solid fa-circle-down"></i></a>`;
+                const downloadLink = document.createElement('a');
+                downloadLink.style.cursor = 'pointer';
+                downloadLink.className = 'text-dark ms-3';
+                downloadLink.setAttribute('data-bs-toggle', 'tooltip');
+                downloadLink.setAttribute('data-bs-title', 'télécharger');
+                downloadLink.innerHTML = '<i class="fa-solid fa-circle-down"></i>';
+                downloadLink.addEventListener('click', function() { downloadFile(filename); });
+                rightSpan.appendChild(downloadLink);
 
-                li.innerHTML = `
-                <span class="small">
-                    ${actionBtn}
-                    <span class="ms-1 ${filename === active_py || filename === active_pyxres ? 'fw-bold text-primary' : ''}">${filename}</span>
-                </span>
-                <span>${renameBtn}${deleteBtn}${downloadBtn}</span>
-            `;
+                li.appendChild(leftSpan);
+                li.appendChild(rightSpan);
                 listContainer.appendChild(li);
             });
 
@@ -516,7 +595,7 @@
             }
             await updateActivePythonFileContent();
             active_py = filename;
-            const json = JSON.parse(localStorage.getItem('capytale_pyxel_studio_data'));
+            const json = getStorageData();
             code_editor.getSession().setValue(json[filename] || "", -1);
             document.getElementById('active_py_display').innerText = active_py;
             renderFilesList();
@@ -527,7 +606,7 @@
         }
 
         async function editPyxresFile(filename) {
-            const iframeSrc = `iframe-pyxres.html?edit=${encodeURIComponent(filename)}`;
+            const iframeSrc = 'iframe-pyxres.html?edit=' + encodeURIComponent(filename);
             const container = document.getElementById('pyxel-editor');
             const iframe = container.querySelector('iframe');
 
@@ -538,7 +617,8 @@
                 renderFilesList();
 
                 // Réinjecter l'iframe seulement si nécessaire pour charger un fichier différent
-                container.innerHTML = `<iframe src='${iframeSrc}' width='100%' frameborder='0' scrolling='no' style='height:100%'></iframe>`;
+                container.innerHTML = '';
+                container.appendChild(createIframe(iframeSrc));
             }
 
             // Basculer vers l'onglet ressources
@@ -550,7 +630,9 @@
             await forceSavePyxelResource();
             await updateActivePythonFileContent();
 
-            document.getElementById('pyxel-screen').innerHTML = `<iframe src='iframe-screen.html?run=${encodeURIComponent(filename)}' width='100%' frameborder='0' scrolling='no' style='height:100%'></iframe>`;
+            var screen = document.getElementById('pyxel-screen');
+            screen.innerHTML = '';
+            screen.appendChild(createIframe('iframe-screen.html?run=' + encodeURIComponent(filename)));
         }
 
         function addFilePrompt() {
@@ -563,7 +645,7 @@
                 return;
             }
 
-            const json = JSON.parse(localStorage.getItem('capytale_pyxel_studio_data'));
+            const json = getStorageData();
             if (json[filename] !== undefined) {
                 alert("Ce fichier existe déjà.");
                 return;
@@ -601,7 +683,7 @@
                 }
             }
 
-            const json = JSON.parse(localStorage.getItem('capytale_pyxel_studio_data'));
+            const json = getStorageData();
             if (json[newFilename] !== undefined) {
                 alert("Un fichier portant ce nom existe déjà.");
                 return;
@@ -627,7 +709,7 @@
 
         function deleteFile(filename) {
             if (confirm(`Êtes-vous sûr de vouloir supprimer ${filename} ?`)) {
-                const json = JSON.parse(localStorage.getItem('capytale_pyxel_studio_data'));
+                const json = getStorageData();
                 delete json[filename];
                 localStorage.setItem('capytale_pyxel_studio_data', JSON.stringify(json));
                 if (active_py === filename) active_py = "app.py";
@@ -638,7 +720,7 @@
         }
 
         function downloadFile(filename) {
-            const json = JSON.parse(localStorage.getItem('capytale_pyxel_studio_data'));
+            const json = getStorageData();
             let content = json[filename];
             let url;
 
@@ -669,7 +751,7 @@
             const files = event.target.files;
             if (!files || files.length === 0) return;
 
-            const json = JSON.parse(localStorage.getItem('capytale_pyxel_studio_data'));
+            const json = getStorageData();
             let promises = [];
 
             for (let i = 0; i < files.length; i++) {
